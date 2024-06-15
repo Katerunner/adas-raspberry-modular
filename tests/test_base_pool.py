@@ -2,7 +2,7 @@ import random
 import unittest
 import time
 from src.modules.base_module import BaseModule
-from src.modules.base_pool import BasePool
+from src.pools.base_pool import BasePool
 
 
 class ExampleModuleA(BaseModule):
