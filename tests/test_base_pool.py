@@ -33,22 +33,18 @@ class TestBasePool(unittest.TestCase):
         pool.start()
         time.sleep(2)  # Let it run for some time
 
-        # Collect 20 results
+        # Collect 200 results
         results = []
-        for _ in range(100):
+        for _ in range(200):
             results.append(pool.value)
-            time.sleep(0.01)
+            time.sleep(0.005)
 
         # Stop the pool
         pool.stop()
 
         # Check that the results contain expected characters
-        self.assertIn('a', results)
-        self.assertIn('b', results)
-        self.assertIn('1', results)
-        self.assertIn('2', results)
-        self.assertIn('@', results)
-        self.assertIn('%', results)
+        result_set = set(results)
+        self.assertTrue({'a', 'b', '1', '2', '@', '%'}.issubset(result_set))
 
     def test_pool_all_result_format(self):
         # Create example modules
@@ -59,13 +55,13 @@ class TestBasePool(unittest.TestCase):
         pool.start()
         time.sleep(2)  # Let it run for some time
 
-        # Collect results from value_list
-        values_list = pool.value_list
+        # Collect results from value list
+        values_list = pool.value
 
         # Stop the pool
         pool.stop()
 
-        # Check that the value_list contains expected characters at respective indexes
+        # Check that the value list contains expected characters at respective indexes
         self.assertIn(values_list[0], ['a', 'b'])
         self.assertIn(values_list[1], ['1', '2'])
         self.assertIn(values_list[2], ['@', '%'])

@@ -1,17 +1,18 @@
 import threading
 import time
-
 from src.modules.base_module import BaseModule
+from typing import List, Union, Optional
 
 
-class BasePool:
-    def __init__(self, result_format: str, workers: list[BaseModule], delay: float = 0.0):
+class BasePool(BaseModule):
+    def __init__(self, result_format: str, workers: List[BaseModule], delay: float = 0.0):
+        """Initialize the BasePool with a result format, workers, and delay."""
+        super().__init__()
         assert result_format in ['last', 'all'], "result_format must be 'last' or 'all'"
         self.result_format = result_format
         self.workers = workers
         self.delay = delay
-        self.value = None
-        self.value_list = None if result_format == 'last' else [None] * len(workers)
+        self.value = None if result_format == 'last' else [None] * len(workers)
         self._stop_event = threading.Event()
         self._thread = None
 
@@ -43,5 +44,5 @@ class BasePool:
                     time.sleep(self.delay)
             elif self.result_format == 'all':
                 for i, worker in enumerate(self.workers):
-                    self.value_list[i] = worker.value
+                    self.value[i] = worker.value
                     time.sleep(self.delay)
