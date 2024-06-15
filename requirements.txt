@@ -2,3 +2,7 @@ numpy==1.26.4
 numba==0.60.0
 Pillow==10.3.0
 opencv-python==4.10.0.82
+
+# ML
+ultralytics==8.2.32
+ncnn==1.0.20240410

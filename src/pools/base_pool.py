@@ -1,7 +1,7 @@
 import threading
 import time
 from src.modules.base_module import BaseModule
-from typing import List, Union, Optional
+from typing import List
 
 
 class BasePool(BaseModule):
