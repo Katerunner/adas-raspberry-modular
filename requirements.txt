@@ -1,8 +1,11 @@
 numpy==1.26.4
 numba==0.60.0
 Pillow==10.3.0
-opencv-python==4.10.0.82
+opencv-python==4.10.0.84
+
+fuzzywuzzy==0.18.0
+python-Levenshtein==0.25.1
 
 # ML
-ultralytics==8.2.32
+ultralytics==8.2.45
 ncnn==1.0.20240410
