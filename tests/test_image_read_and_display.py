@@ -1,3 +1,4 @@
+import os
 import cv2
 import time
 import unittest
@@ -10,11 +11,14 @@ from src.modules.image_display_module import ImageDisplayModule
 
 class TestImageModules(unittest.TestCase):
     def setUp(self):
-        # Check if webcam is available
-        self.cap = cv2.VideoCapture(0)
+        self.video_path = 'assets/videos/video_1.mp4'
+        if not os.path.exists(self.video_path):
+            self.skipTest(f"Video path {self.video_path} does not exist.")
+
+        # Open the video file
+        self.cap = cv2.VideoCapture(self.video_path)
         if not self.cap.isOpened():
-            self.skipTest("Webcam is not available")
-        self.cap.release()
+            self.skipTest("Video file is not available")
 
     def test_image_modules(self):
         # Create ImageReadingModule with webcam source

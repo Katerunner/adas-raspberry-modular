@@ -111,6 +111,8 @@
           <option value="object.Object" />
           <option value="object.put_object" />
           <option value="boto3.resources" />
+          <option value="cv2.utils.logging" />
+          <option value="cv2.ORB_create" />
         </list>
       </option>
     </inspection_tool>
