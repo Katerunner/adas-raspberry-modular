@@ -1,5 +1,5 @@
 ### Project specific
-*.mp4
+#*.mp4
 idea/
 *_ncnn_model/
 *.torchscript
