@@ -11,3 +11,4 @@ ultralytics==8.2.45
 ncnn==1.0.20240410
 pandas~=2.2.2
 PyYAML~=6.0.1
+scikit-learn~=1.5.2
