@@ -30,6 +30,7 @@ lane_detection_module.start()
 while True:
     lane_processor = lane_detection_module.value
     frame = image_reading_module.value
+
     if lane_processor:
         for lane_id in lane_processor.lane_labels:
             lane_cls = lane_processor.lane_labels[lane_id]
@@ -55,6 +56,8 @@ while True:
         cv2.imshow('Lane Detection', frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
+        image_reading_module.stop()
+        lane_detection_module.stop()
         break
 
 cv2.destroyAllWindows()
