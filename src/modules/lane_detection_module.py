@@ -1,5 +1,4 @@
 from ultralytics import YOLO
-
 from src.modules.base_module import BaseModule
 from src.lane_detection.lane_processor import LaneProcessor
 from src.lane_detection.lane_curve_estimator import LaneCurveEstimator
@@ -15,7 +14,10 @@ class LaneDetectionModule(BaseModule):
             poly_degree: int = 2,
             ransac_min_samples: int = 2,
             ransac_loss: str = "squared_error",
-            n_points: int = 10
+            n_points: int = 10,
+            memory_size: int = 100,
+            decay: float = 2.0,
+            lane_curve_estimator: LaneCurveEstimator = None
     ):
         """
         Initialize the LaneDetectionModule.
@@ -36,6 +38,12 @@ class LaneDetectionModule(BaseModule):
         :type ransac_loss: str, optional
         :param n_points: Number of predicted points for lane curve estimation, defaults to 10.
         :type n_points: int, optional
+        :param memory_size: Maximum memory size for storing lane points, defaults to 100.
+        :type memory_size: int, optional
+        :param decay: Decay factor for weights, defaults to 2.0.
+        :type decay: float, optional
+        :param lane_curve_estimator: Pre-initialized LaneCurveEstimator, optional.
+        :type lane_curve_estimator: LaneCurveEstimator, optional
         """
         super().__init__()
         self.source_module = source_module
@@ -44,12 +52,19 @@ class LaneDetectionModule(BaseModule):
         self.use_weights = use_weights
         self.model = YOLO(self.model_weights, task='detect')
 
-        self.lane_curve_estimator = LaneCurveEstimator(
-            poly_degree=poly_degree,
-            ransac_min_samples=ransac_min_samples,
-            ransac_loss=ransac_loss,
-            n_points=n_points
-        )
+        # Use an already initialized LaneCurveEstimator if provided, otherwise create a new one
+        if lane_curve_estimator is None:
+            self.lane_curve_estimator = LaneCurveEstimator(
+                image_shape=(1, 1),
+                poly_degree=poly_degree,
+                ransac_min_samples=ransac_min_samples,
+                ransac_loss=ransac_loss,
+                n_points=n_points,
+                memory_size=memory_size,
+                decay=decay
+            )
+        else:
+            self.lane_curve_estimator = lane_curve_estimator
 
     def perform(self):
         """

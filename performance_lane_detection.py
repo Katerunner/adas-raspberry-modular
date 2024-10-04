@@ -5,9 +5,11 @@ from sklearn.linear_model import RANSACRegressor
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.pipeline import make_pipeline
 
+from src.lane_detection.lane_curve_estimator import LaneCurveEstimator
 from src.lane_detection.lane_processor import LaneProcessor
 from src.modules.image_reading_module import ImageReadingModule
 from src.modules.lane_detection_module import LaneDetectionModule
+from src.pools.base_pool import BasePool
 
 video_path = "assets/videos/video_1.mp4"
 lane_model_path = "trained_models/lane-yolov8n.pt"
@@ -21,14 +23,28 @@ colors = {
     3: (255, 255, 0)  # RR: Cyan
 }
 
+lane_curve_estimator = LaneCurveEstimator(image_shape=(1, 1))
+
 image_reading_module = ImageReadingModule(source=video_path, delay_seconds=1 / 30)
-lane_detection_module = LaneDetectionModule(source_module=image_reading_module, model_weights=lane_model_path)
+lane_detection_modules = [
+    LaneDetectionModule(
+        source_module=image_reading_module,
+        model_weights=lane_model_path,
+        lane_curve_estimator=lane_curve_estimator
+    ),
+    LaneDetectionModule(
+        source_module=image_reading_module,
+        model_weights=lane_model_path,
+        lane_curve_estimator=lane_curve_estimator
+    )
+]
+lane_detection_pool = BasePool(result_format='last', workers=lane_detection_modules, delay=1 / 30 / 2)
 
 image_reading_module.start()
-lane_detection_module.start()
+lane_detection_pool.start()
 
 while True:
-    lane_processor = lane_detection_module.value
+    lane_processor = lane_detection_pool.value
     frame = image_reading_module.value
 
     if lane_processor:
@@ -37,18 +53,18 @@ while True:
             lane_obj = lane_processor.lanes[lane_id]
             if lane_obj:
 
-                for p, conf in zip(lane_obj.points, lane_obj.confs):
-                    text = f"{lane_processor.lane_labels[lane_id]} Conf: {round(conf, 2)}"
-                    cv2.circle(frame, p, 5, colors[lane_id], thickness=-1)
-                    cv2.putText(
-                        frame,
-                        text,
-                        (p[0] + 5, p[1] - 5),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.5,
-                        (255, 255, 255),
-                        1
-                    )
+                # for p, conf in zip(lane_obj.points, lane_obj.confs):
+                    # text = f"{lane_processor.lane_labels[lane_id]} Conf: {round(conf, 2)}"
+                    # cv2.circle(frame, p, 5, colors[lane_id], thickness=-1)
+                    # cv2.putText(
+                    #     frame,
+                    #     text,
+                    #     (p[0] + 5, p[1] - 5),
+                    #     cv2.FONT_HERSHEY_SIMPLEX,
+                    #     0.5,
+                    #     (255, 255, 255),
+                    #     1
+                    # )
 
                 cv2.polylines(frame, [lane_obj.estimated_points], isClosed=False, color=colors[lane_id], thickness=2)
 
@@ -57,7 +73,7 @@ while True:
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         image_reading_module.stop()
-        lane_detection_module.stop()
+        lane_detection_pool.stop()
         break
 
 cv2.destroyAllWindows()

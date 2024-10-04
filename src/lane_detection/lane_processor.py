@@ -13,7 +13,7 @@ class LaneProcessor:
             raise ValueError("LaneProcessor must be initialized with exactly 4 lanes.")
 
         if lane_curve_estimator is None:
-            lane_curve_estimator = LaneCurveEstimator()
+            raise ValueError("LaneProcessor requires a pre-initialized LaneCurveEstimator instance.")
 
         self.lanes = lanes
         self.lane_curve_estimator = lane_curve_estimator
@@ -74,12 +74,16 @@ class LaneProcessor:
     def estimate_lane_curves(self, use_weights=False):
         """Estimate lane curves in parallel and populate each lane's estimated points."""
 
-        def _estimate_curve_for_lane(lane):
+        def _estimate_curve_for_lane(lane_class, lane):
             if lane is None or len(lane.points) < 3:
                 return None
 
+            lane_type = self.lane_labels[lane_class]
             weights = lane.confs if use_weights else None
-            _estimated_points = self.lane_curve_estimator.predict_lane_points(lane.points, weights=weights)
+
+            # Call the updated `predict_lane_points` method with lane_type
+            _estimated_points = self.lane_curve_estimator.predict_lane_points(lane_type, lane.points,
+                                                                              new_weights=weights)
             return _estimated_points
 
         if not self.lanes or len(self.lanes) != 4:
@@ -87,14 +91,15 @@ class LaneProcessor:
 
         with ThreadPoolExecutor(max_workers=4) as executor:
             futures = [
-                executor.submit(_estimate_curve_for_lane, lane) if lane is not None else None
-                for lane in self.lanes
+                executor.submit(_estimate_curve_for_lane, lane_class, lane) if lane is not None else None
+                for lane_class, lane in enumerate(self.lanes)
             ]
 
         for i, future in enumerate(futures):
             if future is not None:  # Check if the lane existed and was processed
                 estimated_points = future.result()
                 if estimated_points is not None:
+                    # Assign estimated points to the lane
                     # noinspection PyUnresolvedReferences
                     self.lanes[i].estimated_points = estimated_points
 
