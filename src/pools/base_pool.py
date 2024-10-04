@@ -21,6 +21,7 @@ class BasePool(BaseModule):
         self._stop_event.clear()
 
         for worker in self.workers:
+            time.sleep(self.delay)
             worker.start()
 
         self._thread = threading.Thread(target=self._collect_results)

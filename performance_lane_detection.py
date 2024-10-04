@@ -38,7 +38,7 @@ lane_detection_modules = [
         lane_curve_estimator=lane_curve_estimator
     )
 ]
-lane_detection_pool = BasePool(result_format='last', workers=lane_detection_modules, delay=1 / 30 / 2)
+lane_detection_pool = BasePool(result_format='last', workers=lane_detection_modules, delay=1 / 30 / 4)
 
 image_reading_module.start()
 lane_detection_pool.start()
