@@ -1,6 +1,7 @@
 from ultralytics import YOLO
 
 from src.lane_detection.lane_processor_corrector import LaneProcessorCorrector
+from src.lane_detection.lane_registry import LaneRegistry
 from src.modules.base_module import BaseModule
 from src.lane_detection.lane_processor import LaneProcessor
 from src.lane_detection.lane_curve_estimator import LaneCurveEstimator
@@ -22,35 +23,8 @@ class LaneDetectionModule(BaseModule):
             lane_curve_estimator: LaneCurveEstimator = None,
             lane_processor_corrector: LaneProcessorCorrector = None
     ) -> None:
-        """
-        Initialize the LaneDetectionModule.
-
-        :param source_module: The module providing the source frames.
-        :type source_module: BaseModule
-        :param model_weights: Path to the YOLO model weights.
-        :type model_weights: str
-        :param confidence_threshold: Minimum confidence threshold for lane detection, defaults to 0.2.
-        :type confidence_threshold: float, optional
-        :param use_weights: Whether to use confidences as weights for lane curve estimation, defaults to True.
-        :type use_weights: bool, optional
-        :param poly_degree: Degree of the polynomial for curve estimation, defaults to 2.
-        :type poly_degree: int, optional
-        :param ransac_min_samples: Minimum samples required for RANSAC fitting, defaults to 2.
-        :type ransac_min_samples: int, optional
-        :param ransac_loss: Loss function for RANSAC regression, defaults to 'squared_error'.
-        :type ransac_loss: str, optional
-        :param n_points: Number of predicted points for lane curve estimation, defaults to 10.
-        :type n_points: int, optional
-        :param memory_size: Maximum memory size for storing lane points, defaults to 100.
-        :type memory_size: int, optional
-        :param decay: Decay factor for weights, defaults to 2.0.
-        :type decay: float, optional
-        :param lane_curve_estimator: Pre-initialized LaneCurveEstimator, optional.
-        :type lane_curve_estimator: LaneCurveEstimator, optional
-        :param lane_processor_corrector: Pre-initialized LaneProcessorCorrector, optional.
-        :type lane_processor_corrector: LaneProcessorCorrector, optional
-        """
         super().__init__()
+        self.lane_registry = LaneRegistry()
         self.source_module = source_module
         self.model_weights = model_weights
         self.confidence_threshold = confidence_threshold
@@ -96,4 +70,6 @@ class LaneDetectionModule(BaseModule):
                 lane_processor.estimate_lane_curves(use_weights=self.use_weights)
                 if self.lane_processor_corrector is not None:
                     lane_processor = self.lane_processor_corrector.correct(lane_processor)
-                self.value = lane_processor
+
+                self.lane_registry.update_from_lane_processor(lane_processor)
+                self.value = self.lane_registry

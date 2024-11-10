@@ -47,13 +47,13 @@ image_reading_module.start()
 lane_detection_pool.start()
 
 while True:
-    lane_processor = lane_detection_pool.value
+    lane_registry = lane_detection_pool.value
     frame = image_reading_module.value
 
-    if lane_processor:
-        for lane_id in lane_processor.lane_labels:
-            lane_cls = lane_processor.lane_labels[lane_id]
-            lane_obj = lane_processor.lanes[lane_id]
+    if lane_registry:
+        for lane_id in lane_registry.lane_labels:
+            lane_cls = lane_registry.lane_labels[lane_id]
+            lane_obj = lane_registry.lanes[lane_id]
             if lane_obj and len(lane_obj.estimated_points) > 0:
                 cv2.polylines(frame, [lane_obj.estimated_points], isClosed=False, color=colors[lane_id], thickness=2)
 
