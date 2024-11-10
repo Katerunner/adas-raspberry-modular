@@ -1,6 +1,9 @@
 ### Project specific
 #*.mp4
 idea/
+.idea/
+*.npy
+*.onnx
 *_ncnn_model/
 *.torchscript
 
