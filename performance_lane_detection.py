@@ -1,12 +1,11 @@
 import cv2
 from ultralytics import YOLO
-import numpy as np
-from src.lane_detection.lane_curve_estimator import LaneCurveEstimator
-from src.lane_detection.lane_processor import LaneProcessor
-from src.lane_detection.lane_processor_corrector import LaneProcessorCorrector
+
+from src.pools.base_pool import BasePool
 from src.modules.image_reading_module import ImageReadingModule
 from src.modules.lane_detection_module import LaneDetectionModule
-from src.pools.base_pool import BasePool
+from src.lane_detection.lane_curve_estimator import LaneCurveEstimator
+from src.lane_detection.lane_processor_corrector import LaneProcessorCorrector
 
 video_path = "assets/videos/video_1.mp4"
 lane_model_path = "trained_models/lane-yolov8n.pt"
@@ -28,12 +27,14 @@ lane_detection_modules = [
     LaneDetectionModule(
         source_module=image_reading_module,
         model_weights=lane_model_path,
-        lane_curve_estimator=lane_curve_estimator
+        lane_curve_estimator=lane_curve_estimator,
+        lane_processor_corrector=lane_processor_corrector
     ),
     LaneDetectionModule(
         source_module=image_reading_module,
         model_weights=lane_model_path,
-        lane_curve_estimator=lane_curve_estimator
+        lane_curve_estimator=lane_curve_estimator,
+        lane_processor_corrector=lane_processor_corrector
     )
 ]
 lane_detection_pool = BasePool(result_format='last',
@@ -50,9 +51,6 @@ while True:
     frame = image_reading_module.value
 
     if lane_processor:
-        # Correct the lanes before displaying
-        lane_processor = lane_processor_corrector.correct(lane_processor)
-
         for lane_id in lane_processor.lane_labels:
             lane_cls = lane_processor.lane_labels[lane_id]
             lane_obj = lane_processor.lanes[lane_id]

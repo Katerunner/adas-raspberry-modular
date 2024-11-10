@@ -1,4 +1,6 @@
 from ultralytics import YOLO
+
+from src.lane_detection.lane_processor_corrector import LaneProcessorCorrector
 from src.modules.base_module import BaseModule
 from src.lane_detection.lane_processor import LaneProcessor
 from src.lane_detection.lane_curve_estimator import LaneCurveEstimator
@@ -17,8 +19,9 @@ class LaneDetectionModule(BaseModule):
             n_points: int = 10,
             memory_size: int = 100,
             decay: float = 2.0,
-            lane_curve_estimator: LaneCurveEstimator = None
-    ):
+            lane_curve_estimator: LaneCurveEstimator = None,
+            lane_processor_corrector: LaneProcessorCorrector = None
+    ) -> None:
         """
         Initialize the LaneDetectionModule.
 
@@ -44,6 +47,8 @@ class LaneDetectionModule(BaseModule):
         :type decay: float, optional
         :param lane_curve_estimator: Pre-initialized LaneCurveEstimator, optional.
         :type lane_curve_estimator: LaneCurveEstimator, optional
+        :param lane_processor_corrector: Pre-initialized LaneProcessorCorrector, optional.
+        :type lane_processor_corrector: LaneProcessorCorrector, optional
         """
         super().__init__()
         self.source_module = source_module
@@ -65,10 +70,14 @@ class LaneDetectionModule(BaseModule):
             )
         else:
             self.lane_curve_estimator = lane_curve_estimator
+        self.lane_processor_corrector = lane_processor_corrector
 
     def perform(self):
         """
-        Perform the lane detection and curve estimation process.
+        Perform the lane detection and correction process.
+
+        Detects lanes using the YOLO model, estimates lane curves, and applies corrections using the
+        LaneProcessorCorrector if provided.
 
         :raises Exception: If an error occurs during the lane detection process.
         """
@@ -85,4 +94,6 @@ class LaneDetectionModule(BaseModule):
                 )
 
                 lane_processor.estimate_lane_curves(use_weights=self.use_weights)
+                if self.lane_processor_corrector is not None:
+                    lane_processor = self.lane_processor_corrector.correct(lane_processor)
                 self.value = lane_processor

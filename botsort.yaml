@@ -1,0 +1,20 @@
+# Ultralytics YOLO 🚀, AGPL-3.0 license
+# Custom YOLO tracker settings for BoT-SORT tracker with unique IDs
+
+tracker_type: botsort  # using BoT-SORT tracker
+track_high_thresh: 0.7  # require very high confidence for tracking association
+track_low_thresh: 0.5  # relaxed second association for more flexibility in matching objects
+new_track_thresh: 0.7  # ensure only very high confidence detections start new tracks
+track_buffer: 100000  # set to 1 to quickly discard old tracks and ensure a new ID is assigned
+match_thresh: 0.8  # make matching very strict so it rarely reuses old tracks
+#min_box_area: 20  # ensuring a reasonable object size for detection, helps filter noise
+#mot20: False  # not using MOT20
+
+# BoT-SORT settings
+gmc_method: sparseOptFlow  # use sparse optical flow for global motion compensation
+proximity_thresh: 0.9  # moderate proximity threshold for ensuring tracks are not linked across distant frames
+appearance_thresh: 0.9  # very strict on appearance to treat different-looking objects as separate, ensuring new IDs
+with_reid: True  # keep ReID enabled to distinguish visually different objects
+
+# Additional options
+reid_model_type: lightweight  # use a lightweight ReID model, important for hardware constraints
