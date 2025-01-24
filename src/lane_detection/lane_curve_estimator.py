@@ -8,7 +8,7 @@ import warnings
 class LaneCurveEstimator:
     def __init__(
             self,
-            image_shape,
+            image_shape=(100, 100),
             poly_degree=2,
             ransac_min_samples=2,
             ransac_loss="squared_error",
