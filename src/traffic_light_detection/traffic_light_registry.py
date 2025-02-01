@@ -14,14 +14,16 @@ class TrafficLightRegistry:
 
     @property
     def registry(self):
+        self.clean_old_lights()
         return self._registry_objs
 
     def clean_old_lights(self):
-        current_time = time.time()
-        filtered_data = [(obj, reg_time) for obj, reg_time in zip(self._registry_objs, self._registry_time)
-                         if current_time - reg_time <= self.max_lifetime]
+        leave = []
+        for i in range(len(self._registry_time)):
+            leave.append(time.time() - self._registry_time[i] <= self.max_lifetime)
 
-        self._registry_objs, self._registry_time = zip(*filtered_data) if filtered_data else ([], [])
+        self._registry_objs = [el for i, el in enumerate(self._registry_objs) if leave[i]]
+        self._registry_time = [el for i, el in enumerate(self._registry_time) if leave[i]]
 
     def update_registry(self, traffic_light: TrafficLight):
         self.clean_old_lights()

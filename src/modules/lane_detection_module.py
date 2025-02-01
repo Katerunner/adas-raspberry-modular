@@ -1,3 +1,4 @@
+import cv2
 from ultralytics import YOLO
 
 from src.lane_detection.lane_processor_corrector import LaneProcessorCorrector
@@ -5,6 +6,13 @@ from src.lane_detection.lane_registry import LaneRegistry
 from src.modules.base_module import BaseModule
 from src.lane_detection.lane_processor import LaneProcessor
 from src.lane_detection.lane_curve_estimator import LaneCurveEstimator
+
+DEFAULT_LANE_COLORS = {
+    0: (255, 0, 0),  # LL: Blue
+    1: (0, 255, 0),  # LC: Green
+    2: (0, 0, 255),  # RC: Red
+    3: (255, 255, 0)  # RR: Cyan
+}
 
 
 class LaneDetectionModule(BaseModule):
@@ -73,3 +81,21 @@ class LaneDetectionModule(BaseModule):
 
                 self.lane_registry.update_from_lane_processor(lane_processor)
                 self.value = self.lane_registry
+
+    def draw_lanes(self, frame):
+        traffic_lane_registry = self.value
+        if traffic_lane_registry is None:
+            return
+
+        for lane_id in traffic_lane_registry.lane_labels:
+            # lane_cls = traffic_lane_registry.lane_labels[lane_id]
+            lane_obj = traffic_lane_registry.lanes[lane_id]
+            if lane_obj and len(lane_obj.estimated_points) > 0:
+                cv2.polylines(
+                    frame,
+                    [lane_obj.estimated_points],
+                    isClosed=False,
+                    color=DEFAULT_LANE_COLORS[lane_id],
+                    thickness=2
+                )
+        return frame

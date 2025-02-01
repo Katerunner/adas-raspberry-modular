@@ -1,5 +1,6 @@
 import time
 
+import cv2
 import numpy as np
 
 from src.object_tracking.tracked_object import TrackedObject
@@ -71,13 +72,18 @@ class NaiveObjectTracker:
         return object_ids
 
     def compare_object(self, tracked_object: TrackedObject):
+        best_match = -1
+        best_simil = 0
         for i in range(len(self.memory)):
             object_to_compare = self.memory[i]
             features_sim = 1 - self._mape(tracked_object.features_array, object_to_compare.features_array)
             positions_sim = 1 - self._mae(tracked_object.position_array, object_to_compare.position_array)
             if (features_sim > self.feature_threshold) and (positions_sim > self.position_threshold):
-                return i
-        return -1
+                simil = features_sim + positions_sim
+                if simil > best_simil:
+                    best_match = i
+                    best_simil = features_sim + positions_sim
+        return best_match
 
     def add_object(self, tracked_object: TrackedObject):
 
@@ -112,13 +118,55 @@ class NaiveObjectTracker:
     def _calculate_features(image, xyxy):
         x1, y1, x2, y2 = xyxy.astype(int)
         cropped_image = image[y1:y2, x1:x2]
+
+        # Mean RGB
         mean_rgb = np.mean(cropped_image, axis=(0, 1))
+
+        # Mean of all RGB channels
         mean_all = np.mean(mean_rgb)
+
+        # Standard deviation of RGB channels
         std_rgb = np.std(cropped_image, axis=(0, 1))
+
+        # Dimensions
         width = x2 - x1
         height = y2 - y1
         area = width * height
-        features = np.array([*mean_rgb, mean_all, *std_rgb, width, height, area])
+
+        # Aspect ratio
+        aspect_ratio = width / height if height != 0 else 0
+
+        # Color histogram (normalized, 8 bins per channel)
+        hist_r = cv2.calcHist([cropped_image], [0], None, [8], [0, 256]).flatten()
+        hist_g = cv2.calcHist([cropped_image], [1], None, [8], [0, 256]).flatten()
+        hist_b = cv2.calcHist([cropped_image], [2], None, [8], [0, 256]).flatten()
+        hist = np.concatenate([hist_r, hist_g, hist_b])
+        hist_normalized = hist / np.sum(hist) if np.sum(hist) > 0 else hist
+
+        # Sobel gradient magnitude (mean)
+        gray_image = cv2.cvtColor(cropped_image, cv2.COLOR_BGR2GRAY)
+        sobelx = cv2.Sobel(gray_image, cv2.CV_64F, 1, 0, ksize=3)
+        sobely = cv2.Sobel(gray_image, cv2.CV_64F, 0, 1, ksize=3)
+        gradient_magnitude = np.sqrt(sobelx ** 2 + sobely ** 2)
+        mean_gradient = np.mean(gradient_magnitude)
+
+        # Compactness (perimeter^2 / area)
+        perimeter = 2 * (width + height)
+        compactness = (perimeter ** 2) / area if area > 0 else 0
+
+        # Combine features
+        features = np.array([
+            *mean_rgb,  # 3 features
+            mean_all,  # 1 feature
+            *std_rgb,  # 3 features
+            width,  # 1 feature
+            height,  # 1 feature
+            area,  # 1 feature
+            aspect_ratio,  # 1 feature
+            mean_gradient,  # 1 feature
+            compactness,  # 1 feature
+            *hist_normalized  # 24 features (8 bins * 3 channels)
+        ])
         return features
 
     @staticmethod

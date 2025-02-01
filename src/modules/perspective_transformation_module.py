@@ -62,6 +62,21 @@ class PerspectiveTransformationModule(BaseModule):
         transformed_point /= transformed_point[2]  # Normalize by w
         return transformed_point[0], transformed_point[1]  # x', y'
 
+    def draw_guidelines(self, frame: np.ndarray):
+        if self.src_weights is None:
+            return frame
+
+        zone_color = (255, 100, 0)
+
+        src_points = self.src_weights.copy().astype(int)
+
+        a = src_points[2].copy()
+        src_points[2] = src_points[3].copy()
+        src_points[3] = a
+
+        cv2.polylines(frame, [src_points], isClosed=True, color=zone_color, thickness=1)
+        return frame
+
     def perform(self):
         while not self._stop_event.is_set():
             frame = self.source_module.value
