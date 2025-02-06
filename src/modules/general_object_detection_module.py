@@ -13,11 +13,11 @@ class GeneralObjectDetectionModule(BaseModule):
     def __init__(self,
                  source_module: BaseModule,
                  model_weights: str,
-                 detection_threshold: float = 0.4,
+                 detection_threshold: float = 0.3,
                  object_tracker: Any = None,
                  tracker_max_objects=None,
-                 tracker_confidence_threshold=0.8,
-                 tracker_feature_threshold=0.97,
+                 tracker_confidence_threshold=0.7,
+                 tracker_feature_threshold=0.95,
                  tracker_position_threshold=0.98,
                  tracker_lifespan=5
                  ):
@@ -44,7 +44,7 @@ class GeneralObjectDetectionModule(BaseModule):
         while not self._stop_event.is_set():
             frame = self.source_module.value
             if frame is not None:
-                prediction_result = self.model.track(frame, conf=self.detection_threshold, verbose=False)[0]
+                prediction_result = self.model.predict(frame, conf=self.detection_threshold, verbose=False)[0]
                 ids = self.object_tracker.process_yolo_result(prediction_result=prediction_result)
                 self.moving_object_registry.from_yolo_result(prediction_result=prediction_result, ids=ids)
                 self.traffic_light_registry.from_yolo_result(prediction_result=prediction_result)

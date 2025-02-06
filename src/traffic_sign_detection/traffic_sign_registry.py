@@ -1,15 +1,20 @@
 import time
 import uuid
 
+import numpy as np
+from ultralytics import YOLO
+
 from src.traffic_sign_detection.traffic_sign import TrafficSign
 
 
 class TrafficSignRegistry:
     def __init__(self,
+                 yolo_class_weights: str,
                  max_size: int = 8,
                  min_occurrences: int = 5,
                  casting_lifetime: int = 3,
                  registry_lifetime: int = 5):
+        self.classificator = YOLO(yolo_class_weights, task='classify')
         self.max_size = max_size
 
         self._registry = []
@@ -39,6 +44,14 @@ class TrafficSignRegistry:
             del self._registry[i]
             del self._registry_guid[i]
             del self._registry_time[i]
+
+    def classify_traffic_sign(self, image: np.ndarray) -> str:
+        results = self.classificator.predict(image, verbose=False)
+        if not results:
+            return "Unknown"
+
+        pred_idx = results[0].probs.top1
+        return self.classificator.names[pred_idx] if hasattr(self.classificator, "names") else str(pred_idx)
 
     @property
     def registry(self):
@@ -80,8 +93,9 @@ class TrafficSignRegistry:
             for i in range(num_signs):
                 x1, y1, x2, y2 = xyxys[i].astype(int)
                 cropped_image = original_image[y1:y2, x1:x2]
+                name = self.classify_traffic_sign(image=cropped_image)
                 traffic_sign = TrafficSign(
-                    name="traffic_sign",
+                    name=name,
                     guid=ids[i],
                     image=cropped_image,
                     position=xyxys[i].astype(int)

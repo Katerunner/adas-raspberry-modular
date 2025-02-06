@@ -70,6 +70,7 @@ class MainApp(tk.Tk):
 
         # Calibration view: do not resize; show raw frames
         if "calibration" in self.frames:
+            frame = self.ps.get_frame(draw_lanes=False, draw_moving_objects=False, draw_collision_zone=False)
             calib = self.frames["calibration"]
             if frame is not None:
                 cv2image_calib = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)

@@ -159,12 +159,12 @@ class NaiveObjectTracker:
             *mean_rgb,  # 3 features
             mean_all,  # 1 feature
             *std_rgb,  # 3 features
-            width,  # 1 feature
-            height,  # 1 feature
-            area,  # 1 feature
-            aspect_ratio,  # 1 feature
+            width / 2,  # 1 feature
+            height / 2,  # 1 feature
+            area / 2,  # 1 feature
+            aspect_ratio / 2,  # 1 feature
             mean_gradient,  # 1 feature
-            compactness,  # 1 feature
+            compactness / 2,  # 1 feature
             *hist_normalized  # 24 features (8 bins * 3 channels)
         ])
         return features

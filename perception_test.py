@@ -11,11 +11,12 @@ from src.modules.pothole_detection_module import PotholeDetectionModule
 from src.modules.traffic_sign_detection_module import TrafficSignDetectionModule
 from src.system.perception_system import PerceptionSystem
 
-video_path = "assets/videos/video_2.mp4"
+video_path = "assets/videos/video_1.mp4"
 object_model_path = "trained_models/moob-yolov8n.pt"
 lane_model_path = "trained_models/lane-yolov8n.pt"
 sign_model_path = "trained_models/sign-yolov8n.pt"
 hole_model_path = 'trained_models/hole-yolov8n.pt'
+sncl_model_path = 'trained_models/traffic-sign-class-yolov11n.pt'
 
 lane_colors = {
     0: (255, 0, 0),  # LL: Blue
@@ -40,7 +41,8 @@ lane_detection_module = LaneDetectionModule(
 
 sign_detection_module = TrafficSignDetectionModule(
     source_module=image_reading_module,
-    model_weights=sign_model_path
+    yolo_detect_weights=sign_model_path,
+    yolo_class_weights=sncl_model_path
 )
 
 perspective_transformation_module = PerspectiveTransformationModule(source_module=image_reading_module)

@@ -10,7 +10,8 @@ from src.traffic_sign_detection.traffic_sign_registry import TrafficSignRegistry
 class TrafficSignDetectionModule(BaseModule):
     def __init__(self,
                  source_module: BaseModule,
-                 model_weights: str,
+                 yolo_detect_weights: str,
+                 yolo_class_weights: str,
                  detection_threshold: float = 0.7,
                  registry_max_size: int = 8,
                  registry_min_occurrences: int = 5,
@@ -27,11 +28,13 @@ class TrafficSignDetectionModule(BaseModule):
         """Initialize the TrafficSignDetectionModule with a source module and model weights."""
         super().__init__()
         self.source_module = source_module
-        self.model_weights = model_weights
+        self.yolo_detect_weights = yolo_detect_weights
+        self.yolo_class_weights = yolo_class_weights
         self.detection_threshold = detection_threshold
-        self.model = YOLO(self.model_weights, task='detect')
+        self.model = YOLO(self.yolo_detect_weights, task='detect')
 
         self.traffic_sign_registry = TrafficSignRegistry(
+            yolo_class_weights=yolo_class_weights,
             max_size=registry_max_size,
             min_occurrences=registry_min_occurrences,
             casting_lifetime=casting_lifetime,

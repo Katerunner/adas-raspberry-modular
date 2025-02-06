@@ -45,12 +45,15 @@ class PerceptionSystem:
         self.collision_warning_module.stop()
 
     @property
-    def frame(self,
-              draw_collision_zone: bool = True,
-              draw_perspective_guidelines: bool = True,
-              draw_moving_objects: bool = True,
-              draw_lanes: bool = True,
-              ):
+    def frame(self):
+        return self.get_frame()
+
+    def get_frame(self,
+                  draw_collision_zone: bool = True,
+                  draw_perspective_guidelines: bool = True,
+                  draw_moving_objects: bool = True,
+                  draw_lanes: bool = True,
+                  ):
         frame = self.image_reading_module.value
         frame = self.collision_warning_module.draw_zone(frame) if draw_collision_zone else frame
         frame = self.lane_detection_module.draw_lanes(frame) if draw_lanes else frame
