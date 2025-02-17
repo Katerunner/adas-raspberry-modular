@@ -1,3 +1,4 @@
+import threading
 import time
 import uuid
 
@@ -26,14 +27,15 @@ class MovingObjectRegistry:
         self._registry_times = [i for i, a in zip(self._registry_times, alive) if a]
 
     def update_registry(self, moving_object: MovingObject):
-        if moving_object.guid in self._registry_ids:
-            object_index = self._registry_ids.index(moving_object.guid)
-            self._registry_objs[object_index].update_history(xyxy=moving_object.xyxy, s=moving_object.s)
-            self._registry_times[object_index] = time.time()
-        else:
-            self._registry_ids.append(moving_object.guid)
-            self._registry_objs.append(moving_object)
-            self._registry_times.append(time.time())
+        with threading.Lock():
+            if moving_object.guid in self._registry_ids:
+                object_index = self._registry_ids.index(moving_object.guid)
+                self._registry_objs[object_index].update_history(xyxy=moving_object.xyxy, s=moving_object.s)
+                self._registry_times[object_index] = time.time()
+            else:
+                self._registry_ids.append(moving_object.guid)
+                self._registry_objs.append(moving_object)
+                self._registry_times.append(time.time())
 
     def from_yolo_result(self, prediction_result, ids: list = None):
         name_dict = prediction_result.names

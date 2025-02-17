@@ -4,6 +4,7 @@ from src.modules.collision_warning_module import CollisionWarningModule
 from src.modules.general_object_detection_module import GeneralObjectDetectionModule
 from src.modules.image_reading_module import ImageReadingModule
 from src.modules.lane_detection_module import LaneDetectionModule
+from src.modules.led_strip_module import LEDStripModule
 from src.modules.perspective_transformation_module import PerspectiveTransformationModule
 from src.modules.pothole_detection_module import PotholeDetectionModule
 from src.modules.traffic_sign_detection_module import TrafficSignDetectionModule
@@ -16,6 +17,7 @@ def setup_perception_system():
     lane_model_path = "trained_models/lane-yolov8n.pt"
     sign_model_path = "trained_models/sign-yolov8n.pt"
     hole_model_path = "trained_models/hole-yolov8n.pt"
+    sncl_model_path = "trained_models/traffic-sign-class-yolov11n.pt"
 
     image_reading_module = ImageReadingModule(source=video_path, delay_seconds=1 / 30)
     object_detection_module = GeneralObjectDetectionModule(
@@ -32,7 +34,8 @@ def setup_perception_system():
     )
     sign_detection_module = TrafficSignDetectionModule(
         source_module=image_reading_module,
-        model_weights=sign_model_path
+        yolo_detect_weights=sign_model_path,
+        yolo_class_weights=sncl_model_path
     )
     perspective_transformation_module = PerspectiveTransformationModule(source_module=image_reading_module)
     pothole_detection_module = PotholeDetectionModule(
@@ -44,6 +47,15 @@ def setup_perception_system():
         frame_width=image_reading_module.frame_width,
         frame_height=image_reading_module.frame_height
     )
+
+    led_strip_module = LEDStripModule(
+        perspective_transformation_module=perspective_transformation_module,
+        lane_detection_module=lane_detection_module,
+        pothole_detection_module=pothole_detection_module,
+        collision_warning_module=collision_warning_module,
+        object_detection_module=object_detection_module
+    )
+
     ps = PerceptionSystem(
         image_reading_module=image_reading_module,
         perspective_transformation_module=perspective_transformation_module,
@@ -51,6 +63,7 @@ def setup_perception_system():
         sign_detection_module=sign_detection_module,
         general_object_detection_module=object_detection_module,
         pothole_detection_module=pothole_detection_module,
-        collision_warning_module=collision_warning_module
+        collision_warning_module=collision_warning_module,
+        led_strip_module=led_strip_module
     )
     return ps

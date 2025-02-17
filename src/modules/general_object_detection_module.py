@@ -4,6 +4,7 @@ import cv2
 from ultralytics import YOLO
 
 from src.modules.base_module import BaseModule
+from src.modules.image_reading_module import ImageReadingModule
 from src.moving_object_detection.moving_object_registry import MovingObjectRegistry
 from src.object_tracking.naive_object_tracker import NaiveObjectTracker
 from src.traffic_light_detection.traffic_light_registry import TrafficLightRegistry
@@ -11,7 +12,7 @@ from src.traffic_light_detection.traffic_light_registry import TrafficLightRegis
 
 class GeneralObjectDetectionModule(BaseModule):
     def __init__(self,
-                 source_module: BaseModule,
+                 source_module: ImageReadingModule,
                  model_weights: str,
                  detection_threshold: float = 0.3,
                  object_tracker: Any = None,

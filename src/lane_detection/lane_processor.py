@@ -82,8 +82,11 @@ class LaneProcessor:
             weights = lane.confs if use_weights else None
 
             # Call the updated `predict_lane_points` method with lane_type
-            _estimated_points = self.lane_curve_estimator.predict_lane_points(lane_type, lane.points,
-                                                                              new_weights=weights)
+            _estimated_points = self.lane_curve_estimator.predict_lane_points(
+                lane_type,
+                lane.points,
+                new_weights=weights
+            )
             return _estimated_points
 
         if not self.lanes or len(self.lanes) != 4:

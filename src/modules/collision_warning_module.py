@@ -1,5 +1,3 @@
-import copy
-import threading
 import time
 
 import cv2
