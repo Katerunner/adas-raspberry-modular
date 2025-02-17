@@ -20,11 +20,12 @@ class MovingObjectRegistry:
         return self._registry_objs
 
     def clean_dead(self):
-        alive = [(time.time() - birth) < self.max_lifetime for birth in self._registry_times]
+        with threading.Lock():
+            alive = [(time.time() - birth) < self.max_lifetime for birth in self._registry_times]
 
-        self._registry_ids = [i for i, a in zip(self._registry_ids, alive) if a]
-        self._registry_objs = [i for i, a in zip(self._registry_objs, alive) if a]
-        self._registry_times = [i for i, a in zip(self._registry_times, alive) if a]
+            self._registry_ids = [i for i, a in zip(self._registry_ids, alive) if a]
+            self._registry_objs = [i for i, a in zip(self._registry_objs, alive) if a]
+            self._registry_times = [i for i, a in zip(self._registry_times, alive) if a]
 
     def update_registry(self, moving_object: MovingObject):
         with threading.Lock():

@@ -19,7 +19,11 @@ class CollisionWarningSystem:
                  ttc: int = 2,
                  confidence_tries: int = 2,
                  triggered_lifetime: int = 3):
-        self.danger_zone_coefficients = danger_zone_coefficients
+        self.danger_zone_coefficients = danger_zone_coefficients.copy()
+        self.top_l_x = danger_zone_coefficients[2][0].copy()
+        self.top_r_x = danger_zone_coefficients[3][0].copy()
+        self.top_l_y = danger_zone_coefficients[2][1].copy()
+        self.top_r_y = danger_zone_coefficients[3][1].copy()
         self.ttc = ttc
         self.triggered_lifetime = triggered_lifetime
         self.confidence_tries = confidence_tries
@@ -33,7 +37,18 @@ class CollisionWarningSystem:
             self._triggered = False
         return self._triggered
 
-    def update_state(self, image_dims: tuple[float, float], moving_objects: list[MovingObject]):
+    def update_state(self, image_dims: tuple[float, float],
+                     moving_objects: list[MovingObject],
+                     horizontal_shift: float = 0.0,
+                     vertical_shift: float = 0.0):
+
+        self.danger_zone_coefficients[2][0] = self.top_l_x - horizontal_shift / 1000
+        self.danger_zone_coefficients[3][0] = self.top_r_x - horizontal_shift / 1000
+        self.danger_zone_coefficients[2][1] = (self.top_l_y + np.abs(horizontal_shift / 4000)) * (
+                1 - np.sqrt(np.abs(vertical_shift / 10000)))
+        self.danger_zone_coefficients[3][1] = (self.top_r_y + np.abs(horizontal_shift / 4000)) * (
+                1 - np.sqrt(np.abs(vertical_shift / 10000)))
+
         zone_coordinates = self.danger_zone_coefficients * np.array(image_dims)
         for obj in moving_objects:
             x_now, y_now = np.mean([obj.xyxy[0], obj.xyxy[2]]), obj.xyxy[3]

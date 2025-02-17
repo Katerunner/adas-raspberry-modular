@@ -7,7 +7,11 @@ from ui.utils.helpers import cv2_to_tk, parse_matrix
 
 
 class DraggablePoint:
-    def __init__(self, canvas, x, y, visual_radius, update_callback, canvas_width, canvas_height):
+    def __init__(self, canvas, x, y, visual_radius, update_callback, canvas_width, canvas_height, role=None):
+        """
+        role: a string indicating the point's role.
+            "TL" => top left, "TR" => top right, "BL" => bottom left, "BR" => bottom right.
+        """
         self.canvas = canvas
         self.x = x
         self.y = y
@@ -16,6 +20,7 @@ class DraggablePoint:
         self.update_callback = update_callback
         self.canvas_width = canvas_width
         self.canvas_height = canvas_height
+        self.role = role  # e.g. "TL", "TR", "BL", or "BR"
         self.debounce_after_id = None  # For debouncing update calls
 
         self.hit_area = canvas.create_oval(
@@ -28,9 +33,11 @@ class DraggablePoint:
             x + self.visual_radius, y + self.visual_radius,
             fill='red', outline='black', width=2
         )
+        # Use our helper method to get the proper label offset and anchor.
+        dx, dy, anchor = self.get_label_offset_and_anchor()
         self.text = canvas.create_text(
-            x + self.visual_radius + 5, y - self.visual_radius - 5,
-            text=self.get_text(), anchor='nw',
+            x + dx, y + dy,
+            text=self.get_text(), anchor=anchor,
             fill='white', font=('Arial', 10, 'bold')
         )
         for tag in (self.hit_area, self.circle, self.text):
@@ -43,6 +50,43 @@ class DraggablePoint:
         norm_y = self.y / self.canvas_height
         return f"({norm_x:.2f}, {norm_y:.2f})"
 
+    def get_label_offset_and_anchor(self):
+        """
+        Returns a tuple (dx, dy, anchor) based on the point's role.
+        The goal is:
+          - Top left ("TL"): label to the left of the point.
+          - Top right ("TR"): label to the right.
+          - Bottom left ("BL"): label above the point (to the right).
+          - Bottom right ("BR"): label above the point (to the left).
+        """
+        offset = self.visual_radius + 5
+        if self.role == "TL":
+            return (-offset, -offset, "se")
+        elif self.role == "TR":
+            return (offset, -offset, "sw")
+        elif self.role == "BL":
+            return (offset, -offset, "nw")
+        elif self.role == "BR":
+            return (-offset, -offset, "ne")
+        else:
+            return (offset, -offset, "nw")
+
+    def update_display(self):
+        """Update the visual representation of the point on the canvas."""
+        self.canvas.coords(
+            self.hit_area,
+            self.x - self.hit_radius, self.y - self.hit_radius,
+            self.x + self.hit_radius, self.y + self.hit_radius
+        )
+        self.canvas.coords(
+            self.circle,
+            self.x - self.visual_radius, self.y - self.visual_radius,
+            self.x + self.visual_radius, self.y + self.visual_radius
+        )
+        dx, dy, anchor = self.get_label_offset_and_anchor()
+        self.canvas.coords(self.text, self.x + dx, self.y + dy)
+        self.canvas.itemconfigure(self.text, text=self.get_text(), anchor=anchor)
+
     def on_press(self, event):
         self.on_motion(event)
 
@@ -51,15 +95,7 @@ class DraggablePoint:
         new_y = max(0, min(event.y, self.canvas_height))
         self.x = new_x
         self.y = new_y
-        self.canvas.coords(self.hit_area,
-                           self.x - self.hit_radius, self.y - self.hit_radius,
-                           self.x + self.hit_radius, self.y + self.hit_radius)
-        self.canvas.coords(self.circle,
-                           self.x - self.visual_radius, self.y - self.visual_radius,
-                           self.x + self.visual_radius, self.y + self.visual_radius)
-        self.canvas.coords(self.text,
-                           self.x + self.visual_radius + 5, self.y - self.visual_radius - 5)
-        self.canvas.itemconfigure(self.text, text=self.get_text())
+        self.update_display()
 
         if self.debounce_after_id is not None:
             self.canvas.after_cancel(self.debounce_after_id)
@@ -87,15 +123,12 @@ class CalibrationEditor(UpdatableFrame):
         self.cancel_callback = cancel_callback
         self.default_points = None
 
-        # Get frame dimensions (default if not available)
-        active_frame = self.ps.image_reading_module.value
-        if active_frame is not None:
-            self.main_height, self.main_width = active_frame.shape[:2]
-        else:
-            self.main_width, self.main_height = 640, 480
+        self.main_image_tk = None
+        self.perspective_image_tk = None
 
+        self.main_height, self.main_width = 512, 512
         self.persp_width = 128
-        self.persp_height = self.main_height
+        self.persp_height = 512
 
         # Create canvases for main and perspective view.
         self.canvas_frame = tk.Frame(self)
@@ -108,8 +141,9 @@ class CalibrationEditor(UpdatableFrame):
         self.canvas_frame.grid_columnconfigure(1, weight=0)
         self.canvas_frame.grid_rowconfigure(0, weight=1)
 
+        # Create the main image.
         self.canvas_main_image = self.canvas_main.create_image(0, 0, anchor='nw')
-        self.canvas_persp_image = self.canvas_persp.create_image(0, 0, anchor='nw')
+        self.canvas_prsp_image = self.canvas_persp.create_image(0, 0, anchor='nw')
 
         # Load persistent calibration from settings if available; otherwise use factory defaults.
         # Persistent order: BL, BR, TL, TR.
@@ -125,25 +159,48 @@ class CalibrationEditor(UpdatableFrame):
             ]
             self.settings["src_weights"] = "0.0,1.0;1.0,1.0;0.47,0.47;0.53,0.47"
 
+        self.src_expand_weight = self.settings.get('src_expand_weight', 0.1)
+
         # Save a copy for cancellation.
         self.default_points = persistent_points.copy() if self.default_points is None else self.default_points
 
         # Create draggable points in persistent order.
+        # Order in settings: [BL, BR, TL, TR]
+        roles = ["BL", "BR", "TL", "TR"]
         self.points = []
         self.visual_radius = 5
-        for norm in persistent_points:
+        for idx, norm in enumerate(persistent_points):
             x = norm[0] * self.main_width
             y = norm[1] * self.main_height
-            dp = DraggablePoint(self.canvas_main, x, y, self.visual_radius, self.update_all, self.main_width,
-                                self.main_height)
+            dp = DraggablePoint(
+                canvas=self.canvas_main,
+                x=x, y=y,
+                visual_radius=self.visual_radius,
+                update_callback=self.update_all,
+                canvas_width=self.main_width,
+                canvas_height=self.main_height,
+                role=roles[idx]
+            )
             self.points.append(dp)
 
-        # Create polygon overlay.
-        ordered = [self.points[0], self.points[2], self.points[3], self.points[1]]
-        coords = []
-        for dp in ordered:
-            coords.extend([dp.x, dp.y])
-        self.polygon = self.canvas_main.create_polygon(coords, outline='yellow', fill='', width=2)
+        # Create polygon overlays.
+        polygon_coords = self.draggable_points_to_coords(expand_x_coefficient=0.0)
+        self.polygon = self.canvas_main.create_polygon(polygon_coords, outline='blue', fill='', width=2)
+        outer_polygon_coords = self.draggable_points_to_coords(expand_x_coefficient=self.src_expand_weight)
+        self.outer_polygon = self.canvas_main.create_polygon(outer_polygon_coords, outline='dodger blue', fill='',
+                                                             width=1)
+
+        # Set the stacking order:
+        #   1. Lower the main image to the bottom.
+        #   2. Raise the polygon overlays above the image.
+        #   3. Raise the draggable point items above the polygons.
+        self.canvas_main.tag_lower(self.canvas_main_image)
+        self.canvas_main.tag_raise(self.polygon, self.canvas_main_image)
+        self.canvas_main.tag_raise(self.outer_polygon, self.canvas_main_image)
+        for dp in self.points:
+            self.canvas_main.tag_raise(dp.hit_area)
+            self.canvas_main.tag_raise(dp.circle)
+            self.canvas_main.tag_raise(dp.text)
 
         # Add Apply and Cancel buttons.
         self.button_frame = tk.Frame(self)
@@ -155,30 +212,76 @@ class CalibrationEditor(UpdatableFrame):
 
         self.add_after(500, self.update_all)
 
+    def enforce_top_points_distance(self):
+        """
+        Enforce that the Euclidean distance (in normalized coordinates)
+        between the top two points (indices 2 and 3) remains exactly 0.06.
+        """
+        top_left = self.points[2]
+        top_right = self.points[3]
+        mw, mh = self.main_width, self.main_height
+
+        # Get normalized positions
+        tl_norm = (top_left.x / mw, top_left.y / mh)
+        tr_norm = (top_right.x / mw, top_right.y / mh)
+
+        dx_norm = tr_norm[0] - tl_norm[0]
+        dy_norm = tr_norm[1] - tl_norm[1]
+        d_norm = (dx_norm ** 2 + dy_norm ** 2) ** 0.5
+        if d_norm < 1e-6:
+            return
+
+        desired = 0.06  # desired Euclidean distance in normalized units
+        factor = desired / d_norm
+
+        new_dx_norm = dx_norm * factor
+        new_dy_norm = dy_norm * factor
+
+        # Compute the midpoint in normalized coordinates.
+        mid_norm = ((tl_norm[0] + tr_norm[0]) / 2, (tl_norm[1] + tr_norm[1]) / 2)
+        new_tl_norm = (mid_norm[0] - new_dx_norm / 2, mid_norm[1] - new_dy_norm / 2)
+        new_tr_norm = (mid_norm[0] + new_dx_norm / 2, mid_norm[1] + new_dy_norm / 2)
+
+        # Convert back to pixel coordinates.
+        new_tl_x = new_tl_norm[0] * mw
+        new_tl_y = new_tl_norm[1] * mh
+        new_tr_x = new_tr_norm[0] * mw
+        new_tr_y = new_tr_norm[1] * mh
+
+        # Update the point positions.
+        top_left.x = new_tl_x
+        top_left.y = new_tl_y
+        top_right.x = new_tr_x
+        top_right.y = new_tr_y
+
+        # Update their visual representation.
+        top_left.update_display()
+        top_right.update_display()
+
     def get_normalized_coordinates(self):
         # Return coordinates in persistent order (BL, BR, TL, TR).
         return [(dp.x / self.main_width, dp.y / self.main_height) for dp in self.points]
 
     def on_apply(self):
         coords = self.get_normalized_coordinates()
-        # Build new persistent string in order BL, BR, TL, TR.
         new_src_weights = ";".join([f"{x:.2f},{y:.2f}" for x, y in coords])
         print("Applied Calibration Coordinates (persistent order):", coords)
         self.settings["src_weights"] = new_src_weights
         self.apply_callback({"src_weights": new_src_weights})
 
     def on_cancel(self):
-        # Revert draggable points to the persistent calibration from settings.
         if "src_weights" in self.settings and self.settings["src_weights"]:
             matrix = parse_matrix(self.settings["src_weights"], 4, 2)
             persistent = [(float(r[0]), float(r[1])) for r in matrix]
         else:
             persistent = self.default_points
+
         for i, (nx, ny) in enumerate(persistent):
             self.points[i].x = nx * self.main_width
             self.points[i].y = ny * self.main_height
+            self.points[i].update_display()
+
         self.update_all()
-        # Reset settings["src_weights"] to factory default.
         self.settings["src_weights"] = "0.0,1.0;1.0,1.0;0.47,0.47;0.53,0.47"
         self.cancel_callback()
 
@@ -197,30 +300,54 @@ class CalibrationEditor(UpdatableFrame):
             self.add_after(500, self.update_all)
             return
 
-        self.main_cv2_img = self.ps.image_reading_module.value
-        resized_main = cv2.resize(self.main_cv2_img, (self.main_width, self.main_height))
-        photo_main = cv2_to_tk(resized_main)
-        self.canvas_main.itemconfig(self.canvas_main_image, image=photo_main)
-        self.photo_main = photo_main
+        input_image = self.ps.image_reading_module.value
+        main_image_np = cv2.resize(input_image, (self.main_width, self.main_height))
+        main_image_tk = cv2_to_tk(main_image_np)
+        self.canvas_main.itemconfig(self.canvas_main_image, image=main_image_tk)
 
-        # For visualization, reorder persistent points [BL, BR, TL, TR] to [BL, TL, TR, BR].
-        ordered = [self.points[0], self.points[2], self.points[3], self.points[1]]
-        coords = []
-        for p in ordered:
-            coords.extend([p.x, p.y])
-        self.canvas_main.coords(self.polygon, *coords)
+        self.enforce_top_points_distance()
 
-        src_pts = np.array([[p.x, p.y] for p in ordered], dtype=np.float32)
+        polygon_coords = self.draggable_points_to_coords(expand_x_coefficient=0.0)
+        self.canvas_main.coords(self.polygon, *polygon_coords)
+        outer_polygon_coords = self.draggable_points_to_coords(expand_x_coefficient=self.src_expand_weight)
+        self.canvas_main.coords(self.outer_polygon, *outer_polygon_coords)
+
+        src_pts = np.array([[p.x, p.y] for p in self.get_ordered_points()], dtype=np.float32)
         dst_pts = np.array([
             [0, self.persp_height],
             [0, 0],
             [self.persp_width, 0],
             [self.persp_width, self.persp_height]
         ], dtype=np.float32)
-        M = cv2.getPerspectiveTransform(src_pts, dst_pts)
-        persp_img = cv2.warpPerspective(self.main_cv2_img, M, (self.persp_width, self.persp_height))
-        photo_persp = cv2_to_tk(persp_img)
-        self.canvas_persp.itemconfig(self.canvas_persp_image, image=photo_persp)
-        self.photo_persp = photo_persp
 
+        perspective_image_np = self.apply_perspective_transformation(
+            image=main_image_np,
+            src_pts=src_pts,
+            dst_pts=dst_pts
+        )
+        perspective_image_tk = cv2_to_tk(perspective_image_np)
+        self.canvas_persp.itemconfig(self.canvas_prsp_image, image=perspective_image_tk)
+
+        self.main_image_tk = main_image_tk
+        self.perspective_image_tk = perspective_image_tk
         self.add_after(500, self.update_all)
+
+    def get_ordered_points(self):
+        # Returns points in order: BL, TL, TR, BR.
+        return [self.points[0], self.points[2], self.points[3], self.points[1]]
+
+    def draggable_points_to_coords(self, expand_x_coefficient=0.0):
+        ordered = self.get_ordered_points()
+        coords = []
+        for p in ordered:
+            coords.extend([p.x, p.y])
+        top_width = np.abs(coords[2] - coords[4])
+        coords[0] -= self.main_width * expand_x_coefficient
+        coords[2] -= top_width * expand_x_coefficient
+        coords[4] += top_width * expand_x_coefficient
+        coords[6] += self.main_width * expand_x_coefficient
+        return coords
+
+    def apply_perspective_transformation(self, image: np.ndarray, src_pts: np.ndarray, dst_pts: np.ndarray):
+        transformation_matrix = cv2.getPerspectiveTransform(src_pts, dst_pts)
+        return cv2.warpPerspective(image, transformation_matrix, (self.persp_width, self.persp_height))

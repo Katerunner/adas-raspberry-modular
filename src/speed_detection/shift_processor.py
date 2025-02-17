@@ -27,7 +27,7 @@ class ShiftProcessor:
           left_weight, right_weight: Angular weights for keypoints on the left/right side of the image center.
         """
         # SIFT detector for keypoint extraction
-        self.sift = cv2.SIFT_create()
+        self.sift = cv2.FastFeatureDetector_create(threshold=70)
 
         # Store ROI definitions
         self.horiz_roi = horiz_roi

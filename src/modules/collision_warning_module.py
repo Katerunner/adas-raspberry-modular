@@ -6,6 +6,7 @@ import numpy as np
 from src.collision_warning.collision_warning_system import DEFAULT_DANGER_ZONE_COEFFICIENTS, CollisionWarningSystem
 from src.modules.base_module import BaseModule
 from src.modules.general_object_detection_module import GeneralObjectDetectionModule
+from src.modules.speed_detection_module import SpeedDetectionModule
 
 # Constants
 ZONE_COLOR = (0, 165, 255)  # Orange color in BGR
@@ -19,6 +20,7 @@ class CollisionWarningModule(BaseModule):
     def __init__(
             self,
             object_detection_module: GeneralObjectDetectionModule,
+            speed_detection_module: SpeedDetectionModule,
             frame_width: int,
             frame_height: int,
             danger_zone_coefficients: np.ndarray = DEFAULT_DANGER_ZONE_COEFFICIENTS,
@@ -28,6 +30,7 @@ class CollisionWarningModule(BaseModule):
     ):
         super().__init__()
 
+        self.speed_detection_module = speed_detection_module
         self.object_detection_module = object_detection_module
         self.image_dims = np.array([frame_width, frame_height])
         self.collision_warning_system = CollisionWarningSystem(
@@ -47,7 +50,14 @@ class CollisionWarningModule(BaseModule):
 
             moving_objects = registries.get("moving_object_registry").registry
 
-            self.collision_warning_system.update_state(image_dims=self.image_dims, moving_objects=moving_objects)
+            horizontal_shift = 0 if self.speed_detection_module.value is None else self.speed_detection_module.value[0]
+            vertical_shift = 0 if self.speed_detection_module.value is None else self.speed_detection_module.value[1]
+            self.collision_warning_system.update_state(
+                image_dims=self.image_dims,
+                moving_objects=moving_objects,
+                horizontal_shift=horizontal_shift,
+                vertical_shift=vertical_shift
+            )
             self.value = self.collision_warning_system.triggered
 
     def draw_zone(self, frame: np.ndarray):

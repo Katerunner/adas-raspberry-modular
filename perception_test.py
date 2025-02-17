@@ -93,8 +93,23 @@ pothole_detection_module = PotholeDetectionModule(
     detection_threshold=0.5
 )
 
+speed_detection_module = SpeedDetectionModule(
+    image_reading_module=image_reading_module,
+    object_detection_module=object_detection_module,
+    horiz_roi=(0.4, 0.6, 0.0, 1.0),  # (x_start, x_end, y_start, y_end) for horizontal shift
+    radial_roi=(0.0, 1.0, 0.0, 1.0),  # for vertical (radial) shift (full frame)
+    # Kalman filter parameters (tuned for noisy data but fast smoothing)
+    kalman_process_noise=1e-3,
+    kalman_measurement_noise=1e-3,
+    # Weighting factors for radial displacement
+    inner_weight=0.75, middle_weight=1.0, outer_weight=1.25,
+    # Angular weighting (left/right of center)
+    left_weight=1.0, right_weight=1.0
+)
+
 collision_warning_module = CollisionWarningModule(
     object_detection_module=object_detection_module,
+    speed_detection_module=speed_detection_module,
     frame_width=image_reading_module.frame_width,
     frame_height=image_reading_module.frame_height,
     danger_zone_coefficients=danger_zone_coefficients,
@@ -112,20 +127,6 @@ led_strip_module = LEDStripModule(
     traffic_sign_detection_module=sign_detection_module,
     width=640,
     height=80
-)
-
-speed_detection_module = SpeedDetectionModule(
-    image_reading_module=image_reading_module,
-    object_detection_module=object_detection_module,
-    horiz_roi=(0.4, 0.6, 0.0, 1.0),  # (x_start, x_end, y_start, y_end) for horizontal shift
-    radial_roi=(0.0, 1.0, 0.0, 1.0),  # for vertical (radial) shift (full frame)
-    # Kalman filter parameters (tuned for noisy data but fast smoothing)
-    kalman_process_noise=1e-3,
-    kalman_measurement_noise=1e-3,
-    # Weighting factors for radial displacement
-    inner_weight=0.75, middle_weight=1.0, outer_weight=1.25,
-    # Angular weighting (left/right of center)
-    left_weight=1.0, right_weight=1.0
 )
 
 traffic_sign_display_module = TrafficSignDisplayModule(
