@@ -1,5 +1,5 @@
 # ui/views/calibration.py
-import tkinter as tk
+import ttkbootstrap as tk
 import cv2
 import numpy as np
 from ui.base.updatable_frame import UpdatableFrame
@@ -61,15 +61,15 @@ class DraggablePoint:
         """
         offset = self.visual_radius + 5
         if self.role == "TL":
-            return (-offset, -offset, "se")
+            return -offset, -offset, "se"
         elif self.role == "TR":
-            return (offset, -offset, "sw")
+            return offset, -offset, "sw"
         elif self.role == "BL":
-            return (offset, -offset, "nw")
+            return offset, -offset, "nw"
         elif self.role == "BR":
-            return (-offset, -offset, "ne")
+            return -offset, -offset, "ne"
         else:
-            return (offset, -offset, "nw")
+            return offset, -offset, "nw"
 
     def update_display(self):
         """Update the visual representation of the point on the canvas."""
@@ -133,9 +133,11 @@ class CalibrationEditor(UpdatableFrame):
         # Create canvases for main and perspective view.
         self.canvas_frame = tk.Frame(self)
         self.canvas_frame.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
-        self.canvas_main = tk.Canvas(self.canvas_frame, width=self.main_width, height=self.main_height, bg="black")
+        self.canvas_main = tk.Canvas(self.canvas_frame, width=self.main_width, height=self.main_height,
+                                     background="black")
         self.canvas_main.grid(row=0, column=0, sticky="nsew")
-        self.canvas_persp = tk.Canvas(self.canvas_frame, width=self.persp_width, height=self.persp_height, bg="black")
+        self.canvas_persp = tk.Canvas(self.canvas_frame, width=self.persp_width, height=self.persp_height,
+                                      background="black")
         self.canvas_persp.grid(row=0, column=1, padx=5, sticky="nsew")
         self.canvas_frame.grid_columnconfigure(0, weight=1)
         self.canvas_frame.grid_columnconfigure(1, weight=0)

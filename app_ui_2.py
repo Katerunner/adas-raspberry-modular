@@ -153,13 +153,13 @@ class RapidView(UpdatableFrame):
         self.ps = ps
         top_frame = tk.Frame(self)
         top_frame.pack(side=tk.TOP, fill=tk.X, padx=5, pady=5)
-        self.video1 = tk.Label(top_frame, text="Traffic Sign Left", bg="black", fg="white")
+        self.video1 = tk.Label(top_frame, text="Traffic Sign Left", background="black", foreground="white")
         self.video1.pack(side=tk.LEFT, padx=5, pady=5, expand=True)
-        self.video2 = tk.Label(top_frame, text="Forward Distance", bg="black", fg="white")
+        self.video2 = tk.Label(top_frame, text="Forward Distance", background="black", foreground="white")
         self.video2.pack(side=tk.LEFT, padx=5, pady=5, expand=True)
-        self.video3 = tk.Label(top_frame, text="Traffic Sign Right", bg="black", fg="white")
+        self.video3 = tk.Label(top_frame, text="Traffic Sign Right", background="black", foreground="white")
         self.video3.pack(side=tk.LEFT, padx=5, pady=5, expand=True)
-        self.video4 = tk.Label(self, text="LED Strip", bg="white", fg="black")
+        self.video4 = tk.Label(self, text="LED Strip", background="white", foreground="black")
         self.video4.pack(side=tk.TOP, padx=5, pady=5, expand=True)
         self.add_after(100, self.update_traffic_signs)
         self.add_after(100, self.update_forward_distance)
@@ -198,7 +198,7 @@ class FullView(UpdatableFrame):
     def __init__(self, master, ps, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
         self.ps = ps
-        self.video = tk.Label(self, text="Processed Detection", bg="black", fg="white")
+        self.video = tk.Label(self, text="Processed Detection", background="black", foreground="white")
         self.video.pack(fill=tk.BOTH, expand=True)
         self.add_after(50, self.update_video)
 
@@ -646,7 +646,7 @@ class FullView(UpdatableFrame):
     def __init__(self, master, ps, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
         self.ps = ps
-        self.video = tk.Label(self, text="Processed Detection", bg="black", fg="white")
+        self.video = tk.Label(self, text="Processed Detection", background="black", foreground="white")
         self.video.pack(fill=tk.BOTH, expand=True)
         self.add_after(50, self.update_video)
 
@@ -731,7 +731,7 @@ class MainApplicationFrame(UpdatableFrame):
             "dst_weights": "0.0,1.0;1.0,1.0;0.0,0.0;1.0,0.0"
         }
         self.settings = self.default_settings.copy()
-        self.sidebar = tk.Frame(self, width=200, bg="#DDDDDD")
+        self.sidebar = tk.Frame(self, width=200, background="#DDDDDD")
         self.sidebar.pack(side=tk.LEFT, fill=tk.Y)
         self.btn_dashboard = tk.Button(self.sidebar, text="Dashboard", command=self.show_dashboard)
         self.btn_dashboard.pack(fill=tk.X, padx=10, pady=10)
@@ -739,15 +739,15 @@ class MainApplicationFrame(UpdatableFrame):
         self.btn_calibration.pack(fill=tk.X, padx=10, pady=10)
         self.btn_settings = tk.Button(self.sidebar, text="Settings", command=self.show_settings)
         self.btn_settings.pack(fill=tk.X, padx=10, pady=10)
-        filler = tk.Frame(self.sidebar, bg="#DDDDDD")
+        filler = tk.Frame(self.sidebar, background="#DDDDDD")
         filler.pack(fill=tk.BOTH, expand=True)
-        self.status_label = tk.Label(self.sidebar, text="Status: Stopped", bg="#DDDDDD", fg="red")
+        self.status_label = tk.Label(self.sidebar, text="Status: Stopped", background="#DDDDDD", foreground="red")
         self.status_label.pack(padx=10, pady=5)
         self.btn_start = tk.Button(self.sidebar, text="Start Video", command=self.start_video)
         self.btn_start.pack(fill=tk.X, padx=10, pady=5)
         self.btn_stop = tk.Button(self.sidebar, text="Stop Video", command=self.stop_video)
         self.btn_stop.pack(fill=tk.X, padx=10, pady=5)
-        self.main_area = tk.Frame(self, bg="#EEEEEE")
+        self.main_area = tk.Frame(self, background="#EEEEEE")
         self.main_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.current_view = None
         self.initialize_system()
@@ -896,12 +896,12 @@ class MainApplicationFrame(UpdatableFrame):
 
     def start_video(self):
         self.ps.start()
-        self.status_label.config(text="Status: Running", fg="green")
+        self.status_label.config(text="Status: Running", foreground="green")
         print("Perception System Started")
 
     def stop_video(self):
         self.ps.stop()
-        self.status_label.config(text="Status: Stopped", fg="red")
+        self.status_label.config(text="Status: Stopped", foreground="red")
         print("Perception System Stopped")
 
     def apply_settings(self, new_settings):

@@ -1,5 +1,5 @@
 # ui/views/dashboard.py
-import tkinter as tk
+import ttkbootstrap as tk
 from ui.base.updatable_frame import UpdatableFrame
 from ui.views.rapidview import RapidView
 from ui.views.fullview import FullView

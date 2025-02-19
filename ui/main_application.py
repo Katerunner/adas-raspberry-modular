@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-import tkinter as tk
+from tkinter import ttk
+import ttkbootstrap as tk
 import numpy as np
 
 from ui.base.updatable_frame import UpdatableFrame
-from ui.utils.helpers import parse_matrix, cv2_to_tk
+from ui.utils.helpers import parse_matrix
 from ui.views.dashboard import DashboardView
 from ui.views.calibration import CalibrationEditor
 from ui.views.settings import SettingsView
@@ -67,6 +68,9 @@ class MainApplicationFrame(UpdatableFrame):
         self.settings = self.default_settings.copy()
 
         self._build_sidebar()
+        # Insert a vertical separator between the sidebar and main area
+        self.separator = ttk.Separator(self, orient="vertical")
+        self.separator.pack(side=tk.LEFT, fill=tk.Y, padx=2)
         self._build_main_area()
         self.current_view = None
         self.initialize_system()
@@ -74,7 +78,7 @@ class MainApplicationFrame(UpdatableFrame):
         self.add_after(100, self.update_ui)
 
     def _build_sidebar(self):
-        self.sidebar = tk.Frame(self, width=200, bg="#DDDDDD")
+        self.sidebar = tk.Frame(self, width=200)
         self.sidebar.pack(side=tk.LEFT, fill=tk.Y)
         self.btn_dashboard = tk.Button(
             self.sidebar, text="Dashboard", command=self.show_dashboard
@@ -88,10 +92,10 @@ class MainApplicationFrame(UpdatableFrame):
             self.sidebar, text="Settings", command=self.show_settings
         )
         self.btn_settings.pack(fill=tk.X, padx=10, pady=10)
-        filler = tk.Frame(self.sidebar, bg="#DDDDDD")
+        filler = tk.Frame(self.sidebar)
         filler.pack(fill=tk.BOTH, expand=True)
         self.status_label = tk.Label(
-            self.sidebar, text="Status: Stopped", bg="#DDDDDD", fg="red"
+            self.sidebar, text="Status: Stopped", foreground="red"
         )
         self.status_label.pack(padx=10, pady=5)
         self.btn_start = tk.Button(
@@ -104,7 +108,7 @@ class MainApplicationFrame(UpdatableFrame):
         self.btn_stop.pack(fill=tk.X, padx=10, pady=5)
 
     def _build_main_area(self):
-        self.main_area = tk.Frame(self, bg="#EEEEEE")
+        self.main_area = tk.Frame(self)
         self.main_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
     def initialize_system(self):
@@ -169,8 +173,24 @@ class MainApplicationFrame(UpdatableFrame):
             model_weights=hole_model_path,
             detection_threshold=self.settings["pothole_detection_threshold"]
         )
+
+        self.speed_detection_module = SpeedDetectionModule(
+            image_reading_module=self.image_reading_module,
+            object_detection_module=self.object_detection_module,
+            horiz_roi=(0.4, 0.6, 0.0, 1.0),
+            radial_roi=(0.0, 1.0, 0.0, 1.0),
+            kalman_process_noise=self.settings.get("speed_kalman_process_noise", 1e-3),
+            kalman_measurement_noise=self.settings.get("speed_kalman_measurement_noise", 1e-3),
+            inner_weight=self.settings.get("speed_inner_weight", 0.75),
+            middle_weight=self.settings.get("speed_middle_weight", 1.0),
+            outer_weight=self.settings.get("speed_outer_weight", 1.25),
+            left_weight=self.settings.get("speed_left_weight", 1.0),
+            right_weight=self.settings.get("speed_right_weight", 1.0)
+        )
+
         self.collision_warning_module = CollisionWarningModule(
             object_detection_module=self.object_detection_module,
+            speed_detection_module=self.speed_detection_module,
             frame_width=self.image_reading_module.frame_width,
             frame_height=self.image_reading_module.frame_height,
             danger_zone_coefficients=danger_zone_coefficients,
@@ -187,20 +207,6 @@ class MainApplicationFrame(UpdatableFrame):
             traffic_sign_detection_module=self.sign_detection_module,
             width=1200,
             height=200
-        )
-
-        self.speed_detection_module = SpeedDetectionModule(
-            image_reading_module=self.image_reading_module,
-            object_detection_module=self.object_detection_module,
-            horiz_roi=(0.4, 0.6, 0.0, 1.0),
-            radial_roi=(0.0, 1.0, 0.0, 1.0),
-            kalman_process_noise=self.settings.get("speed_kalman_process_noise", 1e-3),
-            kalman_measurement_noise=self.settings.get("speed_kalman_measurement_noise", 1e-3),
-            inner_weight=self.settings.get("speed_inner_weight", 0.75),
-            middle_weight=self.settings.get("speed_middle_weight", 1.0),
-            outer_weight=self.settings.get("speed_outer_weight", 1.25),
-            left_weight=self.settings.get("speed_left_weight", 1.0),
-            right_weight=self.settings.get("speed_right_weight", 1.0)
         )
 
         self.traffic_sign_display_module = TrafficSignDisplayModule(
@@ -284,12 +290,12 @@ class MainApplicationFrame(UpdatableFrame):
 
     def start_video(self):
         self.ps.start()
-        self.status_label.config(text="Status: Running", fg="green")
+        self.status_label.config(text="Status: Running", foreground="green")
         print("Perception System Started")
 
     def stop_video(self):
         self.ps.stop()
-        self.status_label.config(text="Status: Stopped", fg="red")
+        self.status_label.config(text="Status: Stopped", foreground="red")
         print("Perception System Stopped")
 
     def apply_settings(self, new_settings):

@@ -1,5 +1,5 @@
-# ui/views/settings.py
-import tkinter as tk
+import tkinter as tk  # classic tkinter (for Scale)
+import ttkbootstrap as tb  # for themed widgets
 from tkinter import ttk, messagebox
 from ui.base.updatable_frame import UpdatableFrame
 
@@ -11,7 +11,7 @@ class SettingsView(UpdatableFrame):
         self.apply_callback = apply_callback
         self.current_setting = current_settings.copy()
         self.factory_settings = default_settings.copy()
-        lbl = tk.Label(self, text="Settings", font=("Arial", 16))
+        lbl = tb.Label(self, text="Settings", font=("Arial", 16))
         lbl.pack(pady=10)
         self.notebook = ttk.Notebook(self)
         self.notebook.pack(fill="both", expand=True, padx=5, pady=5)
@@ -23,20 +23,21 @@ class SettingsView(UpdatableFrame):
         self.create_collision_tab()
         self.create_speed_tab()
         self.create_sign_disp_tab()
-        btn_frame = tk.Frame(self)
+        btn_frame = tb.Frame(self)
         btn_frame.pack(pady=10)
-        self.apply_button = tk.Button(btn_frame, text="Apply", command=self.on_apply)
+        self.apply_button = tb.Button(btn_frame, text="Apply", command=self.on_apply)
         self.apply_button.pack(side="left", padx=5)
-        self.reset_button = tk.Button(btn_frame, text="Reset", command=self.on_reset)
+        self.reset_button = tb.Button(btn_frame, text="Reset", command=self.on_reset)
         self.reset_button.pack(side="left", padx=5)
 
     def create_general_tab(self):
-        tab = tk.Frame(self.notebook)
+        tab = tb.Frame(self.notebook)
         self.notebook.add(tab, text="General Obj Det")
         row = 0
 
         def add_slider(label_text, var, frm, row, from_val, to_val, resolution, is_int=False):
-            tk.Label(frm, text=label_text).grid(row=row, column=0, sticky="w", padx=5, pady=2)
+            tb.Label(frm, text=label_text).grid(row=row, column=0, sticky="w", padx=5, pady=2)
+            # Use classic tkinter Scale here because it supports the 'resolution' option.
             scale = tk.Scale(frm, variable=var, from_=from_val, to=to_val, resolution=resolution, orient=tk.HORIZONTAL)
             scale.grid(row=row, column=1, sticky="ew", padx=5, pady=2)
             frm.grid_columnconfigure(1, weight=1)
@@ -59,12 +60,12 @@ class SettingsView(UpdatableFrame):
         self.params["general_tracker_lifespan"] = var_life
 
     def create_sign_tab(self):
-        tab = tk.Frame(self.notebook)
+        tab = tb.Frame(self.notebook)
         self.notebook.add(tab, text="Traffic Sign Det")
         row = 0
 
         def add_slider(label_text, var, frm, row, from_val, to_val, resolution, is_int=False):
-            tk.Label(frm, text=label_text).grid(row=row, column=0, sticky="w", padx=5, pady=2)
+            tb.Label(frm, text=label_text).grid(row=row, column=0, sticky="w", padx=5, pady=2)
             scale = tk.Scale(frm, variable=var, from_=from_val, to=to_val, resolution=resolution, orient=tk.HORIZONTAL)
             scale.grid(row=row, column=1, sticky="ew", padx=5, pady=2)
             frm.grid_columnconfigure(1, weight=1)
@@ -90,12 +91,12 @@ class SettingsView(UpdatableFrame):
         self.params["sign_tracker_position_threshold"] = var_pos_sign
 
     def create_lane_tab(self):
-        tab = tk.Frame(self.notebook)
+        tab = tb.Frame(self.notebook)
         self.notebook.add(tab, text="Lane Detection")
         row = 0
 
         def add_slider(label_text, var, frm, row, from_val, to_val, resolution, is_int=False):
-            tk.Label(frm, text=label_text).grid(row=row, column=0, sticky="w", padx=5, pady=2)
+            tb.Label(frm, text=label_text).grid(row=row, column=0, sticky="w", padx=5, pady=2)
             scale = tk.Scale(frm, variable=var, from_=from_val, to=to_val, resolution=resolution, orient=tk.HORIZONTAL)
             scale.grid(row=row, column=1, sticky="ew", padx=5, pady=2)
             frm.grid_columnconfigure(1, weight=1)
@@ -106,12 +107,12 @@ class SettingsView(UpdatableFrame):
         self.params["lane_confidence_threshold"] = var_conf_lane
 
     def create_pothole_tab(self):
-        tab = tk.Frame(self.notebook)
+        tab = tb.Frame(self.notebook)
         self.notebook.add(tab, text="Pothole Detection")
         row = 0
 
         def add_slider(label_text, var, frm, row, from_val, to_val, resolution, is_int=False):
-            tk.Label(frm, text=label_text).grid(row=row, column=0, sticky="w", padx=5, pady=2)
+            tb.Label(frm, text=label_text).grid(row=row, column=0, sticky="w", padx=5, pady=2)
             scale = tk.Scale(frm, variable=var, from_=from_val, to=to_val, resolution=resolution, orient=tk.HORIZONTAL)
             scale.grid(row=row, column=1, sticky="ew", padx=5, pady=2)
             frm.grid_columnconfigure(1, weight=1)
@@ -122,12 +123,12 @@ class SettingsView(UpdatableFrame):
         self.params["pothole_detection_threshold"] = var_det_pothole
 
     def create_collision_tab(self):
-        tab = tk.Frame(self.notebook)
+        tab = tb.Frame(self.notebook)
         self.notebook.add(tab, text="Collision Warning")
         row = 0
 
         def add_slider(label_text, var, frm, row, from_val, to_val, resolution, is_int=False):
-            tk.Label(frm, text=label_text).grid(row=row, column=0, sticky="w", padx=5, pady=2)
+            tb.Label(frm, text=label_text).grid(row=row, column=0, sticky="w", padx=5, pady=2)
             scale = tk.Scale(frm, variable=var, from_=from_val, to=to_val, resolution=resolution, orient=tk.HORIZONTAL)
             scale.grid(row=row, column=1, sticky="ew", padx=5, pady=2)
             frm.grid_columnconfigure(1, weight=1)
@@ -144,12 +145,12 @@ class SettingsView(UpdatableFrame):
         self.params["collision_triggered_lifetime"] = var_trig_life
 
     def create_speed_tab(self):
-        tab = tk.Frame(self.notebook)
+        tab = tb.Frame(self.notebook)
         self.notebook.add(tab, text="Speed Detection")
         row = 0
 
         def add_slider(label_text, var, frm, row, from_val, to_val, resolution):
-            tk.Label(frm, text=label_text).grid(row=row, column=0, sticky="w", padx=5, pady=2)
+            tb.Label(frm, text=label_text).grid(row=row, column=0, sticky="w", padx=5, pady=2)
             scale = tk.Scale(frm, variable=var, from_=from_val, to=to_val, resolution=resolution, orient=tk.HORIZONTAL)
             scale.grid(row=row, column=1, sticky="ew", padx=5, pady=2)
             frm.grid_columnconfigure(1, weight=1)
@@ -178,12 +179,12 @@ class SettingsView(UpdatableFrame):
         self.params["speed_right_weight"] = var_right
 
     def create_sign_disp_tab(self):
-        tab = tk.Frame(self.notebook)
+        tab = tb.Frame(self.notebook)
         self.notebook.add(tab, text="Traffic Sign Disp")
         row = 0
 
         def add_slider(label_text, var, frm, row, from_val, to_val, resolution, is_int=False):
-            tk.Label(frm, text=label_text).grid(row=row, column=0, sticky="w", padx=5, pady=2)
+            tb.Label(frm, text=label_text).grid(row=row, column=0, sticky="w", padx=5, pady=2)
             scale = tk.Scale(frm, variable=var, from_=from_val, to=to_val, resolution=resolution, orient=tk.HORIZONTAL)
             scale.grid(row=row, column=1, sticky="ew", padx=5, pady=2)
             frm.grid_columnconfigure(1, weight=1)

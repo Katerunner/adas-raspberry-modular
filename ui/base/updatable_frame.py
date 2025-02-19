@@ -1,5 +1,5 @@
 # ui/base/updatable_frame.py
-import tkinter as tk
+import ttkbootstrap as tk
 
 
 class UpdatableFrame(tk.Frame):
